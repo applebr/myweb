@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>이미지 필터 스튜디오</title>
+    <style>
+         :root {
+            --primary-color: #2196F3;
+            --secondary-color: #4CAF50;
+            --background-color: #1a1a1a;
+            --card-color: #2d2d2d;
+            --text-color: #ffffff;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            padding: 40px 0;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            margin-bottom: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #2196F3, #4CAF50);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .drop-zone {
+            position: relative;
+            min-height: 70vh;
+            border: 3px dashed var(--secondary-color);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            transition: all 0.3s ease;
+            background: rgba(76, 175, 80, 0.05);
+            margin: 20px 0;
+            cursor: pointer;
+        }
+        
+        .drop-zone:hover {
+            background: rgba(76, 175, 80, 0.1);
+            transform: scale(1.01);
+        }
+        
+        .drop-zone.drag-over {
+            background: rgba(76, 175, 80, 0.15);
+            transform: scale(1.02);
+            border-color: var(--primary-color);
+        }
+        
+        .drop-zone i {
+            font-size: 50px;
+            margin-bottom: 20px;
+            color: #4CAF50;
+        }
+        
+        .drop-zone p {
+            margin-top: 15px;
+            color: var(--text-color);
+            opacity: 0.8;
+        }
+        
+        .workspace {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .workspace.show {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 20px;
+            opacity: 1;
+        }
+        
+        .filters-panel {
+            background: var(--card-color);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .filter-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .filter-option i {
+            font-size: 1.2em;
+            width: 25px;
+            text-align: center;
+        }
+        
+        .filter-option:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+        
+        .filter-option.active {
+            background: rgba(76, 175, 80, 0.2);
+            border-left: 4px solid var(--secondary-color);
+        }
+        
+        .image-preview {
+            background: var(--card-color);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            min-height: 200px;
+            max-height: 70vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: visible;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            margin: 20px 0;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        
+        canvas {
+            max-width: 100%;
+            max-height: 70vh;
+            object-fit: contain;
+            border-radius: 10px;
+            pointer-events: none;
+        }
+        
+        .slider-container {
+            margin: 20px 0;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        
+        .slider {
+            width: 100%;
+            height: 5px;
+            -webkit-appearance: none;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            border-radius: 5px;
+            outline: none;
+        }
+        
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.3);
+        }
+        
+        .filter-preview {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .filter-thumbnail {
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+        
+        .filter-thumbnail:hover {
+            transform: scale(1.05);
+        }
+        
+        .filter-thumbnail img {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+        }
+        
+        .filter-name {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px;
+            text-align: center;
+            font-size: 0.8em;
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+        
+        .processing {
+            animation: pulse 1s infinite;
+        }
+        
+        .watermark {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            user-select: none;
+            z-index: 100;
+        }
+        
+        .ad-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        
+        .ad-content {
+            background: var(--card-color);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 500px;
+        }
+        
+        .timer {
+            font-size: 24px;
+            margin: 20px 0;
+            color: var(--primary-color);
+        }
+        
+        .filter-controls {
+            display: none;
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+        
+        .filter-option.active+.filter-controls {
+            display: block;
+        }
+        
+        .filter-value {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+            font-size: 0.9em;
+            color: var(--text-color);
+            opacity: 0.8;
+        }
+        
+        .back-to-upload {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 15px 25px;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            border: none;
+        }
+        
+        .back-to-upload:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+        }
+        
+        .alert-message {
+            display: none;
+        }
+    </style>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <noscript>
+        <style>
+            .drop-zone, .workspace { display: none !important; }
+            .noscript-warning {
+                background: #ff4444;
+                color: white;
+                padding: 20px;
+                text-align: center;
+                margin: 20px;
+                border-radius: 10px;
+            }
+            canvas {
+                display: none !important;
+            }
+            .image-preview::before {
+                content: "⚠️ 자바스크립트를 활성화해주세요";
+                display: block;
+                text-align: center;
+                padding: 50px;
+                background: #ff4444;
+                color: white;
+                border-radius: 10px;
+                margin: 20px;
+            }
+        </style>
+        <div class="noscript-warning">
+            <h2>⚠️ 자바스크립트가 비활성화되어 있습니다</h2>
+            <p>이미지 필터 스튜디오를 사용하려면 자바스크립트를 활성화해주세요.</p>
+            <p>이미지 편집 및 다운로드를 위해서는 자바스크립트가 필요합니다.</p>
+        </div>
+    </noscript>
+
+    <div class="container">
+        <header>
+            <h1>이미지 필터 스튜디오</h1>
+            <p>드래그 앤 드롭으로 이미지를 올려주세요</p>
+        </header>
+
+        <div class="drop-zone" id="dropZone">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <p>이미지를 여기에 드래그하거나 클릭하여 업로드</p>
+            <input type="file" id="imageInput" accept="image/*" style="display: none;">
+        </div>
+
+        <div class="workspace" style="display: none;" id="workspace">
+            <div class="filters-panel">
+                <h3>필터 옵션</h3>
+                <div class="filter-group">
+                    <div class="filter-option" data-filter="invert">
+                        <i class="fas fa-circle-half-stroke"></i> 색상 반전
+                    </div>
+                    <div class="filter-controls" id="invert-controls">
+                        <input type="range" class="slider" data-filter="invert" min="0" max="100" value="100">
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <div class="filter-option" data-filter="grayscale">
+                        <i class="fas fa-moon"></i> 흑백
+                    </div>
+                    <div class="filter-controls" id="grayscale-controls">
+                        <input type="range" class="slider" data-filter="grayscale" min="0" max="100" value="100">
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <div class="filter-option" data-filter="sepia">
+                        <i class="fas fa-image"></i> 세피아
+                    </div>
+                    <div class="filter-controls" id="sepia-controls">
+                        <input type="range" class="slider" data-filter="sepia" min="0" max="100" value="100">
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <div class="filter-option" data-filter="blur">
+                        <i class="fas fa-brush"></i> 블러
+                    </div>
+                    <div class="filter-controls" id="blur-controls">
+                        <input type="range" class="slider" data-filter="blur" min="0" max="100" value="50">
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <div class="filter-option" data-filter="brightness">
+                        <i class="fas fa-sun"></i> 밝기
+                    </div>
+                    <div class="filter-controls" id="brightness-controls">
+                        <input type="range" class="slider" data-filter="brightness" min="0" max="200" value="100">
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <div class="filter-option" data-filter="contrast">
+                        <i class="fas fa-circle-dot"></i> 대비
+                    </div>
+                    <div class="filter-controls" id="contrast-controls">
+                        <input type="range" class="slider" data-filter="contrast" min="0" max="200" value="100">
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <div class="filter-option" data-filter="saturate">
+                        <i class="fas fa-palette"></i> 채도
+                    </div>
+                    <div class="filter-controls" id="saturate-controls">
+                        <input type="range" class="slider" data-filter="saturate" min="0" max="200" value="100">
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <div class="filter-option" data-filter="hue-rotate">
+                        <i class="fas fa-sync"></i> 색조 회전
+                    </div>
+                    <div class="filter-controls" id="hue-rotate-controls">
+                        <input type="range" class="slider" data-filter="hue-rotate" min="0" max="360" value="0">
+                    </div>
+                </div>
+            </div>
+
+            <div class="image-preview">
+                <div class="canvas-container">
+                    <canvas id="previewCanvas"></canvas>
+                    <div class="watermark" id="watermark"></div>
+                </div>
+                <div class="action-buttons">
+                    <button class="btn btn-primary" id="downloadBtn">
+                        <i class="fas fa-download"></i> 다운로드
+                    </button>
+                    <button class="btn btn-primary" id="resetBtn">
+                        <i class="fas fa-undo"></i> 초기화
+                    </button>
+                </div>
+            </div>
+            <button class="back-to-upload" id="backToUpload">
+                <i class="fas fa-plus"></i> 새 이미지
+            </button>
+        </div>
+    </div>
+
+    <div class="ad-overlay" id="adOverlay">
+        <div class="ad-content">
+            <h2>잠시만 기다려주세요</h2>
+            <p>고품질 이미지를 준비하고 있습니다...</p>
+            <div class="timer" id="downloadTimer">5</div>
+            <div style="width: 300px; height: 250px; background: #444; margin: 20px auto; display: flex; align-items: center; justify-content: center;">
+                광고 영역
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let originalImage = null;
+        let currentFilter = null;
+        let canvas = document.getElementById('previewCanvas');
+        let ctx = canvas.getContext('2d');
+
+        // 드래그 앤 드롭 설정
+        const dropZone = document.getElementById('dropZone');
+        const workspace = document.getElementById('workspace');
+
+        // 이벤트 리스너 중복 방지를 위한 플래그 추가
+        let isEventListenersAttached = false;
+
+        function attachEventListeners() {
+            if (isEventListenersAttached) return;
+
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, preventDefaults, false);
+            });
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, unhighlight, false);
+            });
+
+            dropZone.addEventListener('drop', handleDrop, false);
+            dropZone.addEventListener('click', () => document.getElementById('imageInput').click());
+
+            document.getElementById('imageInput').addEventListener('change', function(e) {
+                handleFiles(this.files);
+            });
+
+            isEventListenersAttached = true;
+        }
+
+        // 초기 이벤트 리스너 설정
+        attachEventListeners();
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        function highlight(e) {
+            dropZone.classList.add('drag-over');
+        }
+
+        function unhighlight(e) {
+            dropZone.classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            handleFiles(files);
+        }
+
+        function handleFiles(files) {
+            if (files.length > 0) {
+                const file = files[0];
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        loadImage(e.target.result);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+        }
+
+        let filterSettings = {
+            invert: {
+                value: 0,
+                enabled: false
+            },
+            grayscale: {
+                value: 0,
+                enabled: false
+            },
+            sepia: {
+                value: 0,
+                enabled: false
+            },
+            blur: {
+                value: 0,
+                enabled: false
+            },
+            brightness: {
+                value: 100,
+                enabled: false
+            },
+            contrast: {
+                value: 100,
+                enabled: false
+            },
+            saturate: {
+                value: 100,
+                enabled: false
+            },
+            'hue-rotate': {
+                value: 0,
+                enabled: false
+            }
+        };
+
+        function loadImage(src) {
+            originalImage = new Image();
+            originalImage.onload = function() {
+                workspace.classList.add('show');
+                workspace.style.display = 'grid';
+                workspace.style.gridTemplateColumns = '250px 1fr';
+                workspace.style.gap = '20px';
+                dropZone.style.display = 'none';
+
+                // 캔버스 크기 최적화
+                const container = document.querySelector('.canvas-container');
+                const maxWidth = container.offsetWidth;
+                const maxHeight = window.innerHeight * 0.7;
+
+                let scale = 1;
+                let newWidth = originalImage.width;
+                let newHeight = originalImage.height;
+
+                if (newWidth > maxWidth || newHeight > maxHeight) {
+                    const scaleX = maxWidth / newWidth;
+                    const scaleY = maxHeight / newHeight;
+                    scale = Math.min(scaleX, scaleY);
+
+                    newWidth *= scale;
+                    newHeight *= scale;
+                }
+
+                canvas.width = newWidth;
+                canvas.height = newHeight;
+                canvas.style.width = `${newWidth}px`;
+                canvas.style.height = `${newHeight}px`;
+
+                drawImage();
+            };
+            originalImage.src = src;
+        }
+
+        function drawImage() {
+            requestAnimationFrame(() => {
+                if (!document.getElementById('protectionLayer')) {
+                    const protectionLayer = document.createElement('div');
+                    protectionLayer.id = 'protectionLayer';
+                    protectionLayer.style.position = 'absolute';
+                    protectionLayer.style.top = '0';
+                    protectionLayer.style.left = '0';
+                    protectionLayer.style.width = '100%';
+                    protectionLayer.style.height = '100%';
+                    protectionLayer.style.zIndex = '99';
+                    protectionLayer.style.userSelect = 'none';
+                    protectionLayer.style.pointerEvents = 'none';
+                    document.querySelector('.canvas-container').appendChild(protectionLayer);
+                }
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                let filterString = '';
+                for (let [filter, settings] of Object.entries(filterSettings)) {
+                    if (settings.enabled) {
+                        if (filter === 'hue-rotate') {
+                            filterString += `${filter}(${settings.value}deg) `;
+                        } else if (filter === 'blur') {
+                            filterString += `${filter}(${settings.value / 10}px) `;
+                        } else {
+                            filterString += `${filter}(${settings.value}%) `;
+                        }
+                    }
+                }
+
+                ctx.filter = filterString || 'none';
+                ctx.drawImage(originalImage, 0, 0, canvas.width, canvas.height);
+            });
+        }
+
+        document.querySelectorAll('.filter-option').forEach(option => {
+            option.addEventListener('click', function() {
+                if (!originalImage) return;
+
+                const filter = this.dataset.filter;
+                this.classList.toggle('active');
+                filterSettings[filter].enabled = this.classList.contains('active');
+
+                if (filterSettings[filter].enabled) {
+                    const slider = document.querySelector(`.slider[data-filter="${filter}"]`);
+                    filterSettings[filter].value = parseFloat(slider.value);
+                }
+
+                drawImage();
+            });
+        });
+
+        document.querySelectorAll('.slider').forEach(slider => {
+            slider.addEventListener('input', function() {
+                const filter = this.dataset.filter;
+                const value = parseFloat(this.value);
+                filterSettings[filter].value = value;
+                drawImage();
+            });
+        });
+
+        document.getElementById('resetBtn').addEventListener('click', function() {
+            filterSettings = {
+                invert: {
+                    value: 0,
+                    enabled: false
+                },
+                grayscale: {
+                    value: 0,
+                    enabled: false
+                },
+                sepia: {
+                    value: 0,
+                    enabled: false
+                },
+                blur: {
+                    value: 0,
+                    enabled: false
+                },
+                brightness: {
+                    value: 100,
+                    enabled: false
+                },
+                contrast: {
+                    value: 100,
+                    enabled: false
+                },
+                saturate: {
+                    value: 100,
+                    enabled: false
+                },
+                'hue-rotate': {
+                    value: 0,
+                    enabled: false
+                }
+            };
+
+            document.querySelectorAll('.slider').forEach(slider => {
+                const filter = slider.dataset.filter;
+                slider.value = filterSettings[filter].value;
+            });
+
+            document.querySelectorAll('.filter-option').forEach(opt => {
+                opt.classList.remove('active');
+            });
+
+            drawImage();
+        });
+
+        document.getElementById('downloadBtn').addEventListener('click', function() {
+            if (!originalImage) return;
+
+            const adOverlay = document.getElementById('adOverlay');
+            const timerElement = document.getElementById('downloadTimer');
+            adOverlay.style.display = 'flex';
+
+            let timeLeft = 5;
+            timerElement.textContent = timeLeft;
+
+            const timer = setInterval(() => {
+                timeLeft--;
+                timerElement.textContent = timeLeft;
+
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    adOverlay.style.display = 'none';
+
+                    // 원본 크기로 다운로드
+                    const downloadCanvas = document.createElement('canvas');
+                    downloadCanvas.width = originalImage.width;
+                    downloadCanvas.height = originalImage.height;
+                    const downloadCtx = downloadCanvas.getContext('2d');
+
+                    let filterString = '';
+                    for (let [filter, settings] of Object.entries(filterSettings)) {
+                        if (settings.enabled) {
+                            if (filter === 'hue-rotate') {
+                                filterString += `${filter}(${settings.value}deg) `;
+                            } else if (filter === 'blur') {
+                                filterString += `${filter}(${settings.value / 10}px) `;
+                            } else {
+                                filterString += `${filter}(${settings.value}%) `;
+                            }
+                        }
+                    }
+
+                    downloadCtx.filter = filterString || 'none';
+                    downloadCtx.drawImage(originalImage, 0, 0);
+
+                    const link = document.createElement('a');
+                    link.download = '필터적용_이미지.png';
+                    link.href = downloadCanvas.toDataURL('image/png');
+                    link.click();
+                }
+            }, 1000);
+        });
+
+        // 필터 값 표시 개선
+        function updateFilterValue(filter, value) {
+            const valueDisplay = document.querySelector(`#${filter}-controls .filter-value`);
+            if (valueDisplay) {
+                let displayText;
+                if (filter === 'hue-rotate') {
+                    displayText = `${value}°`;
+                } else if (filter === 'blur') {
+                    displayText = `${(value / 10).toFixed(1)}px`;
+                } else if (filter === 'brightness' || filter === 'contrast' || filter === 'saturate') {
+                    displayText = `${value}%`;
+                } else {
+                    displayText = `${value}%`;
+                }
+                valueDisplay.textContent = displayText;
+            }
+        }
+
+        // 우클릭 처리
+        canvas.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+
+        // 윈도우 리사이즈 시 이미지 크기 조정
+        window.addEventListener('resize', function() {
+            if (originalImage) {
+                const container = document.querySelector('.canvas-container');
+                const maxWidth = container.offsetWidth;
+                const maxHeight = window.innerHeight * 0.7;
+
+                let scale = 1;
+                let newWidth = originalImage.width;
+                let newHeight = originalImage.height;
+
+                if (newWidth > maxWidth || newHeight > maxHeight) {
+                    const scaleX = maxWidth / newWidth;
+                    const scaleY = maxHeight / newHeight;
+                    scale = Math.min(scaleX, scaleY);
+
+                    newWidth *= scale;
+                    newHeight *= scale;
+                }
+
+                canvas.width = newWidth;
+                canvas.height = newHeight;
+                canvas.style.width = `${newWidth}px`;
+                canvas.style.height = `${newHeight}px`;
+
+                drawImage();
+            }
+        });
+
+        // 이미지 드래그 방지
+        document.addEventListener('dragstart', function(e) {
+            if (e.target.tagName === 'CANVAS') {
+                e.preventDefault();
+            }
+        });
+
+        // 키보드 단축키 방지
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
+                e.preventDefault();
+            }
+        });
+
+        // 새 이미지 버튼 이벤트 리스너 수정
+        document.getElementById('backToUpload').addEventListener('click', function() {
+            workspace.classList.remove('show');
+            setTimeout(() => {
+                workspace.style.display = 'none';
+                dropZone.style.display = 'flex';
+
+                // 필터 초기화
+                document.getElementById('resetBtn').click();
+
+                // 이미지 초기화
+                originalImage = null;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // 파일 입력 초기화
+                document.getElementById('imageInput').value = '';
+
+                // 이벤트 리스너 재설정
+                attachEventListeners();
+            }, 300);
+        });
+    </script>
+</body>
+
+</html>
